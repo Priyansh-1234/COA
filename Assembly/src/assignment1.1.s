@@ -36,6 +36,14 @@ out_buf:          .space  16
 #     * size of the buffer                  ($a2)
 
 .text
+# This is a linux specific thing.
+# Usually the linker will expect a symbol called __start
+# which is the entry point of the program
+# This can be changed but depends upon how you can tweak your linker
+
+# The actual start of any program in any ELF file is done through a header
+# symbol called e_entry which holds the virtual memory address to the first machine
+# instruction the CPU should execute
 .globl __start
 
 ### __start start

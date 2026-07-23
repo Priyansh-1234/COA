@@ -22,7 +22,8 @@ zig build run-{assignment_name}
 *   **Core Logic:** The rest of the logic and assembly code structure should stay similar to SPIM.
 
 ## Plagiarism
-I would advise against plagiarism for the lab, and this repo should rather be used as a study guide. But who am I to tell you anything.
+Mostly Professors won't ask the same question every year so this repo can't be used for plagarism.
+Just use it to learn about writing assembly.
 
 So, the SPIM-supported file for any program can be found under the `spim/` directory under the name `{assignment_name}.spim.S`.
 

@@ -83,7 +83,7 @@ both_zero:
   syscall
 # Loading the exit status into the a0 register
   li $a0, 1
-  j main_exit
+  j __start_exit
 
 compute_gcd:
 # On linux you are supposed to populate a0 ... a3 for arguments to function call
@@ -112,7 +112,7 @@ print_output_prompt:
 
   li $a0, 0
 
-main_exit:
+__start_exit:
 # On linux, the exit syscall requires 1 argument, i.e. the exit status of the program
 # 0 means it worked succesfully
 # Any other value indicates some kind of failure
