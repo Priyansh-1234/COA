@@ -56,7 +56,16 @@ __start:
   syscall
 
 # Read the first integer value and store to a saved register
-  jal read_uint
+  li $v0, 4003
+  li $a0, 0
+  la $a1, in_buf
+  li $a2, 16
+  syscall
+
+  la $a0, in_buf
+  li $a1, 16
+  jal atoi
+
   move $s0, $v0
 
 # Write the input prompt for the second number to the screen
@@ -67,7 +76,15 @@ __start:
   syscall
 
 # Read the second integer value and store to a saved register
-  jal read_uint
+  li $v0, 4003
+  li $a0, 0
+  la $a1, in_buf
+  li $a2, 16
+  syscall
+
+  la $a0, in_buf
+  li $a1, 16
+  jal atoi 
   move $s1, $v0
 
 # Make the call to the calc_gcd function
@@ -84,8 +101,16 @@ __start:
   syscall
 
 # Print the integer output value
-  move $a0, $s2
-  jal print_uint
+  la $a0, out_buf
+  li $a1, 16
+  move $a2, $s2
+  jal itoa
+
+  move $a2, $v0
+  li $v0, 4004
+  li $a0, 1
+  la $a1, out_buf
+  syscall
 
   li $v0, 4004
   li $a0, 1
@@ -105,6 +130,7 @@ calc_gcd:
   move $t1, $a1
 gcd_loop:
   beq $t0, $t1, gcd_end
+  nop
   bgt $t0, $t1, gcd_sub
 swap:
   move $t2, $t0
@@ -117,83 +143,3 @@ gcd_end:
   move $v0, $t0
   jr $ra
 ### calc_gcd end
-
-### read_uint start
-read_uint:
-# read the input into the in_buf
-  li $v0, 4003
-  li $a0, 0
-  la $a1, in_buf
-  li $a2, 16
-  syscall
-
-# Here $v0 stores the accumulated value
-  la $t0, in_buf
-  li $v0, 0
-
-# standard way to convert ascii to integer
-atoi_loop:
-# load 1 byte from the buffer, if it is null or '\n' (ascii 10), then end the loop
-  lb $t1, 0($t0)
-  beq $t1, 10, atoi_end
-  beqz $t1, atoi_end
-
-# convert the ascii value to int value
-  sub $t1, $t1, 48
-
-# Accumulate this read value
-  mul $v0, $v0, 10
-  add $v0, $v0, $t1
-
-# increase the index and go back to reading
-  addi $t0, $t0, 1
-  j atoi_loop
-
-atoi_end:
-# jr jumps back to where function was called from
-# This address is stored in the $ra register
-# If your function is making other function calls then it
-# is advised you store this value somewhere (preferebly on the stack)
-# Otherwise you would forget where you came from
-  jr $ra
-
-### print_uint start
-print_uint:
-  la $t0, out_buf
-# start at the end of the buffer and build it backwards
-# i.e. from lsb to msb
-  addi $t0, $t0, 15
-# null terminate the buffer
-  sb $zero, 0($t0)
-  move $t1, $a0
-
-itoa_loop:
-  addi $t0, $t0, -1
-  li $t2, 10
-  div $t1, $t2
-# the div assembly takes 2 values and stores the quotient in the lo register
-# and the remainder in the hi register
-  mflo $t1
-  mfhi $t3
-
-# write the remainder to the buffer
-  addi $t3, $t3, 48
-  sb $t3, 0($t0)
-
-# if the is not zero try the loop again
-  bnez $t1, itoa_loop
-
-# setting up the write
-# moving the start of the buffer to register $a1
-  move $a1, $t0
-  la $t2, out_buf
-  addi $t2, $t2, 16
-# Calculating the size of the actual string without the null termination
-  sub $a2, $t2, $t0
-  addi $a2, $a2, -1
-
-  li $v0, 4004
-  li $a0, 1
-  syscall 
-
-  jr $ra

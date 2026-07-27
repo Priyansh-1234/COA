@@ -18,7 +18,15 @@ __start:
   syscall
 
 # Reading the first integer
-  jal read_int
+  li $v0, 4003
+  li $a0, 0
+  la $a1, in_buf
+  li $a2, 16
+  syscall
+
+  la $a0, in_buf
+  li $a1, 16
+  jal atoi
   move $s0, $v0
 
   li $v0, 4004
@@ -28,7 +36,15 @@ __start:
   syscall
 
 # Reading the second integer
-  jal read_int
+  li $v0, 4003
+  li $a0, 0
+  la $a1, in_buf
+  li $a2, 16
+  syscall
+
+  la $a0, in_buf
+  li $a1, 16
+  jal atoi
   move $s1, $v0
 
   blez $s0, invalid_input
@@ -47,8 +63,16 @@ print_output:
   jal calc_lcm
   move $s2, $v0
 
-  move $a0, $s2
-  jal print_uint
+  la $a0, out_buf
+  li $a1, 16
+  move $a2, $s2
+  jal itoa
+
+  move $a2, $v0
+  li $v0, 4004
+  li $a0, 1
+  la $a1, out_buf
+  syscall
 
   li $v0, 4004
   li $a0, 1
@@ -106,87 +130,4 @@ lcm_finish:
   jr $ra
 ### calc_lcm end
 
-### read_int start
-read_int:
-# Reading the buffer to in_buf
-  li $v0, 4003
-  li $a0, 0
-  la $a1, in_buf
-  li $a2, 16
-  syscall
 
-# Here we store the accumulated value in register v0 (Which the user expects the result to be stored in)
-  la $t0, in_buf
-  li $v0, 0
-
-# Checking if the buffer starts with a '-' (ascii 45)
-  lb $t1, 0($t0)
-  bne $t1, 45, atoi_loop
-  li $t4, 1
-  addi $t0, $t0, 1
-
-# standard conversion from ascii to int
-atoi_loop:
-# load 1 byte from the buffer, if it is null or '\n' (ascii 10), then end the loop
-  lb $t1, 0($t0)
-  beq $t1, 10, atoi_end
-  beqz $t1, atoi_end
-
-# convert the ascii value to int value
-  sub $t1, $t1, 48
-
-# Accumulate this read value
-  mul $v0, $v0, 10
-  add $v0, $v0, $t1
-
-# increase the index and go back to reading
-  addi $t0, $t0, 1
-  j atoi_loop
-
-atoi_end:
-  beqz $t4, read_int_end
-  neg $v0, $v0
-
-read_int_end:
-  jr $ra
-### read_int end
-
-### print_uint start
-print_uint:
-  la $t0, out_buf
-# start at the end of the buffer and build it backwards
-# i.e. from lsb to msb
-  addi $t0, $t0, 15
-# null terminate the buffer
-  sb $zero, 0($t0)
-  move $t1, $a0
-
-itoa_loop:
-  addi $t0, $t0, -1
-  li $t2, 10
-  div $t1, $t2
-  mflo $t1
-  mfhi $t3
-
-  addi $t3, $t3, 48
-# write the remainder to the buffer
-  sb $t3, 0($t0)
-
-# if the is not zero try the loop again
-  bnez $t1, itoa_loop
-
-# setting up the write
-# moving the start of the buffer to register $a1
-  move $a1, $t0
-  la $t2, out_buf
-  addi $t2, $t2, 16
-# Calculating the size of the actual string without the null termination
-  sub $a2, $t2, $t0
-  addi $a2, $a2, -1
-
-  li $v0, 4004
-  li $a0, 1
-  syscall 
-
-  jr $ra
-### print_uint end

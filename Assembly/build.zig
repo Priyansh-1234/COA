@@ -37,7 +37,13 @@ pub fn build(b: *std.Build) !void {
             });
 
             exe.root_module.addAssemblyFile(b.path(file_path));
+            exe.root_module.addAssemblyFile(b.path("utils/utils.s"));
             exe.root_module.link_libc = false;
+            // Positional independent code will not work if you have two files and
+            // try to link them against each other
+            // I tried so long for /utils/utils.s to link properly with other files
+            // and not do some Illegal Instruction 4 or something
+            exe.pie = false;
 
             b.installArtifact(exe);
 
