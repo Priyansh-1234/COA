@@ -1,0 +1,422 @@
+Indian Institute of Technology Kharagpur
+AUTUMN Semester, 2026–2027
+COMPUTER SCIENCE AND ENGINEERING
+Computer Organization and Architecture Laboratory
+Verilog Assignment 3
+August 2026
+
+Instructions: This is a group assignment intended for practice. Each group must implement
+the Verilog designs, write suitable testbenches, and demonstrate the working designs and their
+behavioral simulations to a Teaching Assistant for evaluation. The designs must be implemented
+using combinational logic and hierarchical module interconnection.
+
+Question 1: 3-bit Array Multiplier
+Design and simulate a combinational circuit that multiplies two unsigned 3-bit binary numbers
+using partial-product generation and Half/Full Adders.
+
+1. Module Specification
+Create a module named
+array_multiplier_3bit
+with the following interface:
+Signal
+A
+B
+P
+
+Width
+3 bits
+3 bits
+6 bits
+
+Direction
+Input
+Input
+Output
+
+The circuit must compute
+P = A × B.
+The Verilog multiplication operator * must not be used in the design module.
+
+2. Partial-Product Generation
+Let
+A = A2 A1 A0 ,
+
+B = B2 B 1 B 0 .
+
+Generate the nine partial products
+
+1
+
+pij = Ai · Bj
+using AND logic.
+The partial-product arrangement is:
+
+A2 B 2
+
+A2 B0 A1 B0 A0 B0
+A2 B1 A1 B1 A0 B1
+A1 B2 A0 B2
+
+The partial products must then be added using Half Adder and Full Adder modules.
+Students may reuse the half_adder and full_adder modules developed in Verilog Assignment 1.
+
+3. Required Adder Connections
+The partial products must be combined as follows.
+1. The least significant product bit is
+P0 = p00 .
+2. Add p10 and p01 using a Half Adder:
+(P1 , C1 ) = HA(p10 , p01 ).
+3. Add p20 , p11 , and p02 using a Full Adder:
+(S2 , C2a ) = F A(p20 , p11 , p02 ).
+Then combine S2 and C1 using a Half Adder:
+(P2 , C2b ) = HA(S2 , C1 ).
+4. Add p21 , p12 , and C2a using a Full Adder:
+(S3 , C3a ) = F A(p21 , p12 , C2a ).
+Then combine S3 and C2b using a Half Adder:
+(P3 , C3b ) = HA(S3 , C2b ).
+5. Finally, add p22 , C3a , and C3b using a Full Adder:
+(P4 , P5 ) = F A(p22 , C3a , C3b ).
+Thus, the complete output is
+P = P5 P4 P3 P2 P1 P0 .
+
+2
+
+4. Design Hierarchy
+The required design hierarchy is:
+array_multiplier_3bit
+↓
+Partial-Product AND Logic
+
+Half Adders
+
+Full Adders
+
+The multiplier must therefore be constructed by explicitly generating the partial products
+and connecting the required adder modules.
+
+5. Examples
+Some example input-output combinations are:
+A
+000
+001
+010
+101
+111
+111
+
+B
+101
+111
+011
+011
+110
+111
+
+P
+000000
+000111
+000110
+001111
+101010
+110001
+
+For example,
+A = 101 = 5,
+
+B = 011 = 3
+
+must produce
+P = 001111 = 15.
+
+6. Testbench Requirement
+Write a testbench for the array_multiplier_3bit module.
+The testbench must test multiple combinations of A and B, including:
+• multiplication by zero;
+• multiplication by one;
+• equal operands;
+• different operands; and
+• the maximum input values.
+Students are encouraged to verify all 8 × 8 = 64 possible input combinations.
+The behavioral simulation waveform must show at least:
+A,
+
+B,
+
+3
+
+P.
+
+Question 2: Carry-Save Adder for Three 4-bit Numbers
+Design and simulate a combinational circuit that adds three unsigned 4-bit binary numbers using
+a Carry-Save Adder (CSA) followed by a final Ripple-Carry Adder.
+
+1. Top-Level Specification
+Create a module named
+carry_save_adder_3x4
+with the following interface:
+Signal
+A
+B
+C
+Result
+
+Width
+4 bits
+4 bits
+4 bits
+6 bits
+
+Direction
+Input
+Input
+Input
+Output
+
+The circuit must compute
+Result = A + B + C.
+The three operands must not be added using a single Verilog expression such as
+assign Result = A + B + C;
+in the design module.
+Instead, the circuit must use the Carry-Save structure described below.
+
+2. Carry-Save Stage
+Create a module named
+carry_save_stage_4bit
+with three 4-bit inputs
+A[3 : 0],
+
+B[3 : 0],
+
+C[3 : 0],
+
+and outputs
+S[3 : 0],
+
+Carry[3 : 0].
+
+The module must instantiate four Full Adders, one for each bit position.
+For each bit i,
+F Ai (Ai , Bi , Ci )
+must generate
+Si
+and
+Carryi .
+The four Full Adders operate independently:
+4
+
+Full Adder
+FA0
+FA1
+FA2
+FA3
+
+Input 1
+A[0]
+A[1]
+A[2]
+A[3]
+
+Input 2
+B[0]
+B[1]
+B[2]
+B[3]
+
+Input 3
+C[0]
+C[1]
+C[2]
+C[3]
+
+Outputs
+S[0], Carry[0]
+S[1], Carry[1]
+S[2], Carry[2]
+S[3], Carry[3]
+
+Important: the carry output of one Full Adder must not be connected to the next Full
+Adder within the Carry-Save stage.
+Thus, unlike a Ripple-Carry Adder, there is no carry propagation between the four Full
+Adders in this stage.
+
+3. Formation of the Two Intermediate Operands
+The Carry-Save stage produces two intermediate values.
+The Sum vector is extended to 5 bits as
+Sext = {1′ b0, S[3 : 0]}.
+The Carry vector must be shifted left by one bit because every carry generated at bit position
+i has a weight of 2i+1 :
+Carryshifted = {Carry[3 : 0], 1′ b0}.
+Therefore,
+A + B + C = Sext + Carryshifted .
+
+4. Final Ripple-Carry Adder
+Create a module named
+ripple_carry_adder_5bit
+which adds the two 5-bit intermediate values:
+Sext
+and
+Carryshifted .
+The Ripple-Carry Adder must be constructed using five instances of the full_adder
+module.
+Its final output is the 6-bit value
+Result[5:0].
+The carry connection must follow:
+
+C
+
+C
+
+C
+
+C
+
+C
+
+1
+2
+3
+4
+5
+C0 = 0 −→ FA0 −→
+FA1 −→
+FA2 −→
+FA3 −→
+FA4 −→
+Result[5].
+
+5
+
+5. Complete Design Hierarchy
+The complete Carry-Save Adder structure is:
+A[3:0]
+B[3:0]
+C[3:0]
+
+−→
+
+carry_save_stage_4bit
+↓
+S[3:0]
+Carry[3:0]
+↓
+S_ext[4:0]
+Carry_shifted[4:0]
+↓
+ripple_carry_adder_5bit
+↓
+Result[5:0]
+
+The module hierarchy is therefore:
+carry_save_adder_3x4
+↓
+carry_save_stage_4bit
+
+ripple_carry_adder_5bit
+↓
+
+full_adder modules
+
+6. Examples
+Some example input-output combinations are:
+A
+0000
+0001
+0011
+1001
+1111
+1111
+
+B
+0000
+0010
+0101
+0011
+1111
+1111
+
+C
+0000
+0011
+0110
+0100
+0000
+1111
+
+Result
+000000
+000110
+001110
+010000
+011110
+101101
+
+For example,
+A = 0011 = 3,
+
+B = 0101 = 5,
+
+must produce
+Result = 001110 = 14.
+
+6
+
+C = 0110 = 6
+
+7. Testbench Requirement
+Write a testbench for the top-level carry_save_adder_3x4 module.
+The testbench must include:
+• all-zero inputs;
+• small input values;
+• different values for all three operands;
+• cases that produce carries across several bit positions; and
+• the maximum input combination A = B = C = 1111.
+The behavioral simulation waveform must show at least:
+A,
+
+B,
+
+C,
+
+Result.
+
+Students are encouraged to also display the internal S and Carry vectors during demonstration.
+
+Verilog Design Requirement
+Both questions must follow the specified hierarchical module organization.
+Students may use gate primitives or continuous Boolean assignments inside the Half Adder
+and Full Adder modules. However:
+• the Array Multiplier must generate and combine the individual partial products explicitly;
+• the Verilog multiplication operator * must not be used to implement the multiplier;
+• the Carry-Save Adder must use Full Adder instances for the carry-save reduction stage;
+• the final addition in the Carry-Save Adder must use the specified Ripple-Carry Adder; and
+• the complete arithmetic function must not be replaced by a single behavioral arithmetic
+expression.
+All designs must be purely combinational. No clocked or sequential logic is required.
+Demonstration is mandatory. Each group must demonstrate both working designs and their
+behavioral simulations to a Teaching Assistant.
+Students may be asked to explain:
+• partial-product generation in the Array Multiplier;
+• how the Half Adders and Full Adders combine the partial products;
+• why carries are not propagated between Full Adders in the Carry-Save stage;
+• why the Carry vector must be shifted left by one position; and
+• how the final Ripple-Carry Adder produces the final result.
+
+7
+
+Submission
+Submit all Verilog design source files and testbenches in a single zipped folder named
+VerilogAssignment3_{Group_Number}.zip.
+The submission must contain the required modules for:
+• half_adder;
+• full_adder;
+• array_multiplier_3bit;
+• testbench for array_multiplier_3bit;
+• carry_save_stage_4bit;
+• ripple_carry_adder_5bit;
+• carry_save_adder_3x4; and
+• testbench for carry_save_adder_3x4.
+Each source file must contain the group number, names and roll numbers of all group members, assignment number, and date of submission.
+
+8
+
+

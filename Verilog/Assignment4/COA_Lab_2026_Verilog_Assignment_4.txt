@@ -1,0 +1,544 @@
+Indian Institute of Technology Kharagpur
+AUTUMN Semester, 2026–2027
+COMPUTER SCIENCE AND ENGINEERING
+Computer Organization and Architecture Laboratory
+Verilog Assignment 4
+August 2026
+
+Instructions: This is a group assignment intended for practice. Each group must implement
+the complete Verilog design, write a suitable testbench, and demonstrate the working design and
+its behavioral simulation to a Teaching Assistant for evaluation. The complete circuit must be
+purely combinational.
+
+Question 1: Hamming (7,4) Encoder and Syndrome Generator
+Design and simulate a combinational Hamming (7,4) system that:
+1. accepts four data bits;
+2. generates a 7-bit Hamming codeword using even parity;
+3. allows a single-bit error to be introduced for simulation;
+4. checks the received 7-bit word; and
+5. generates a 3-bit syndrome identifying the position of a single erroneous bit.
+
+1. Basic Idea of Hamming (7,4)
+A Hamming (7,4) code converts
+4 data bits
+into
+7 transmitted bits.
+The additional three bits are parity bits used for detecting and locating a single-bit error.
+The seven transmitted positions are numbered
+1, 2, 3, 4, 5, 6, 7.
+The parity bits are placed at positions that are powers of two:
+1,
+
+2,
+
+The remaining positions
+1
+
+4.
+
+3,
+
+5,
+
+6,
+
+7
+
+contain the four information bits.
+Let
+data[3:0] = d3 d2 d1 d0 .
+The Hamming word is organized as follows:
+Hamming Position
+1
+2
+3
+4
+5
+6
+7
+
+Binary Position Number
+001
+010
+011
+100
+101
+110
+111
+
+Contents
+p1
+p2
+d0
+p4
+d1
+d2
+d3
+
+Verilog Bit
+codeword[0]
+codeword[1]
+codeword[2]
+codeword[3]
+codeword[4]
+codeword[5]
+codeword[6]
+
+Therefore,
+codeword[6:0] = {d3 , d2 , d1 , p4 , d0 , p2 , p1 }.
+
+2. Why There Are Three Parity Groups
+Each parity bit checks a particular group of Hamming positions.
+The groups are determined from the binary representation of the position number.
+• p1 checks every position whose least significant binary position bit is 1.
+• p2 checks every position whose second binary position bit is 1.
+• p4 checks every position whose third binary position bit is 1.
+Therefore:
+Parity Check
+p1
+p2
+p4
+
+Hamming Positions Included
+1, 3, 5, 7
+2, 3, 6, 7
+4, 5, 6, 7
+
+Notice, for example, that Hamming position 6 has binary position number
+6 = (110)2 .
+Therefore, position 6 belongs to the p2 and p4 parity groups, but not to the p1 parity group.
+This property will later allow the syndrome to identify the location of an erroneous bit.
+
+3. Hamming (7,4) Encoder
+Create a module named
+hamming74_encoder
+with the following interface:
+2
+
+Signal
+data
+codeword
+
+Width
+4 bits
+7 bits
+
+Direction
+Input
+Output
+
+Even parity must be used.
+The parity equations are:
+p1 = d0 ⊕ d1 ⊕ d3 ,
+p2 = d0 ⊕ d2 ⊕ d3 ,
+and
+p4 = d1 ⊕ d2 ⊕ d3 .
+These equations ensure that every parity group contains an even number of logic 1s.
+Worked Encoding Example
+Consider
+data = 1011.
+Therefore,
+d3 = 1,
+
+d2 = 0,
+
+d1 = 1,
+
+d0 = 1.
+
+The first parity bit is
+p1 = d0 ⊕ d1 ⊕ d3 = 1 ⊕ 1 ⊕ 1 = 1.
+The second parity bit is
+p2 = d0 ⊕ d2 ⊕ d3 = 1 ⊕ 0 ⊕ 1 = 0.
+The third parity bit is
+p4 = d1 ⊕ d2 ⊕ d3 = 1 ⊕ 0 ⊕ 1 = 0.
+The seven Hamming positions are therefore:
+Position 7
+d3
+1
+
+Position 6
+d2
+0
+
+Position 5
+d1
+1
+
+Position 4
+p4
+0
+
+Position 3
+d0
+1
+
+Hence,
+codeword = 1010101
+We can verify the three parity groups:
+p1 group: positions 1, 3, 5, 7 = 1, 1, 1, 1,
+which contains four logic 1s.
+p2 group: positions 2, 3, 6, 7 = 0, 1, 0, 1,
+which contains two logic 1s.
+3
+
+Position 2
+p2
+0
+
+Position 1
+p1
+1
+
+p4 group: positions 4, 5, 6, 7 = 0, 1, 0, 1,
+which also contains two logic 1s.
+Thus all three groups have even parity.
+
+4. Syndrome Generator
+Create a module named
+syndrome_generator
+with the following interface:
+Signal
+received
+syndrome
+error_detected
+
+Width
+7 bits
+3 bits
+1 bit
+
+Direction
+Input
+Output
+Output
+
+The syndrome generator checks the same three parity groups used during encoding.
+Let the received bits at Hamming positions 1 through 7 be
+r1 , r2 , . . . , r7 .
+The three check bits are
+s1 = r1 ⊕ r3 ⊕ r5 ⊕ r7 ,
+s2 = r2 ⊕ r3 ⊕ r6 ⊕ r7 ,
+and
+s4 = r4 ⊕ r5 ⊕ r6 ⊕ r7 .
+The syndrome is formed as
+syndrome = {s4 , s2 , s1 }
+If the received word is correct, all three parity checks pass:
+s4 = s2 = s1 = 0.
+Therefore,
+syndrome = 000.
+
+5. Why the Syndrome Gives the Error Position
+Suppose exactly one transmitted bit changes.
+The parity checks containing that bit will fail.
+Because the membership of each Hamming position in the parity groups is equal to the binary
+representation of the position number, the three syndrome bits directly form the binary error
+position.
+For example:
+
+4
+
+Error Position
+1
+2
+3
+4
+5
+6
+7
+
+Binary
+001
+010
+011
+100
+101
+110
+111
+
+s4
+0
+0
+0
+1
+1
+1
+1
+
+s2
+0
+1
+1
+0
+0
+1
+1
+
+s1
+1
+0
+1
+0
+1
+0
+1
+
+Therefore:
+syndrome
+000
+001
+010
+011
+100
+101
+110
+111
+
+Meaning
+No error
+Error at Hamming position 1
+Error at Hamming position 2
+Error at Hamming position 3
+Error at Hamming position 4
+Error at Hamming position 5
+Error at Hamming position 6
+Error at Hamming position 7
+
+The output error_detected must be:
+error_detected = 0
+when the syndrome is 000, and
+error_detected = 1
+when the syndrome is non-zero.
+
+6. Error Injection Using an Error Mask
+In an actual communication system, a transmitted bit may change because of noise or another
+physical error.
+During Verilog simulation, such an error must be deliberately created so that the errordetection circuit can be tested.
+For this purpose, use a 7-bit signal
+error_mask[6:0].
+The error mask is not part of the Hamming coding algorithm. It is only used to imitate
+corruption of the transmitted codeword during simulation.
+The received word is defined as
+received_codeword = encoded_codeword ⊕ error_mask
+An XOR operation has the useful property
+x⊕0=x
+and
+x ⊕ 1 = x.
+Therefore:
+5
+
+• a 0 in the error mask leaves the corresponding codeword bit unchanged;
+• a 1 in the error mask flips the corresponding codeword bit.
+For no error,
+error_mask = 0000000.
+For a single-bit error, exactly one mask bit must be 1.
+The relation between the Hamming position and error mask is:
+Hamming Position to Flip
+1
+2
+3
+4
+5
+6
+7
+
+Verilog Bit
+[0]
+[1]
+[2]
+[3]
+[4]
+[5]
+[6]
+
+error_mask
+0000001
+0000010
+0000100
+0001000
+0010000
+0100000
+1000000
+
+7. Complete Worked Error Example
+Continue with the earlier data:
+data = 1011.
+The encoder generated
+encoded_codeword = 1010101.
+First consider the case with no error:
+error_mask = 0000000.
+Therefore,
+received_codeword = 1010101 ⊕ 0000000
+= 1010101.
+All parity checks pass, so
+syndrome = 000
+and
+error_detected = 0.
+Now suppose the bit at Hamming position 6 is corrupted.
+Position 6 corresponds to
+codeword[5].
+Therefore, use
+error_mask = 0100000.
+The received word becomes
+6
+
+received_codeword = 1010101 ⊕ 0100000
+= 1110101.
+Now check the three parity groups.
+For the s1 check:
+s1 = r1 ⊕ r3 ⊕ r5 ⊕ r7 = 1 ⊕ 1 ⊕ 1 ⊕ 1 = 0.
+Thus the p1 group still passes.
+For the s2 check:
+s2 = r2 ⊕ r3 ⊕ r6 ⊕ r7 = 0 ⊕ 1 ⊕ 1 ⊕ 1 = 1.
+Thus the p2 group fails.
+For the s4 check:
+s4 = r4 ⊕ r5 ⊕ r6 ⊕ r7 = 0 ⊕ 1 ⊕ 1 ⊕ 1 = 1.
+Thus the p4 group also fails.
+The syndrome is therefore
+syndrome = {s4 , s2 , s1 } = 110.
+Since
+(110)2 = 6,
+the syndrome correctly identifies that the corrupted bit is at
+Hamming position 6 .
+This can also be understood directly from the parity groups:
+6 = (110)2 .
+Position 6 belongs to the p2 and p4 groups, but not the p1 group.
+Therefore,
+s4 = 1,
+
+s2 = 1,
+
+s1 = 0,
+
+giving
+syndrome = 110.
+
+8. Top-Level Hamming System
+Create a top-level module named
+hamming74_system
+with the following interface:
+
+7
+
+Signal
+data_in
+error_mask
+encoded_codeword
+received_codeword
+syndrome
+error_detected
+
+Width
+4 bits
+7 bits
+7 bits
+7 bits
+3 bits
+1 bit
+
+Direction
+Input
+Input
+Output
+Output
+Output
+Output
+
+The top-level module must instantiate:
+• one hamming74_encoder;
+• XOR logic for error injection; and
+• one syndrome_generator.
+The complete data flow is:
+data_in[3:0]
+↓
+hamming74_encoder
+↓
+encoded_codeword[6:0]
+⊕
+error_mask[6:0]
+↓
+received_codeword[6:0]
+↓
+syndrome_generator
+↓
+syndrome[2:0]
+error_detected
+
+9. Logic-Driven Design Requirement
+The encoder and syndrome generator must be implemented as combinational logic networks.
+Students may use:
+• Verilog xor, or, and not gate primitives;
+• continuous Boolean assignments using assign;
+• wires for intermediate signals; and
+• module instantiation.
+The Hamming-code generation and syndrome generation must not be implemented using:
+• case statements;
+• large if–else mappings; or
+• manually entered lookup tables.
+The purpose of the assignment is to realize the Hamming parity equations directly using
+combinational logic.
+No clocked or sequential logic is required.
+8
+
+10. Testbench Requirement
+Write a testbench for the top-level hamming74_system module.
+The testbench must perform the following tests.
+1. Apply multiple 4-bit input values with
+error_mask = 0000000
+and verify
+syndrome = 000
+and
+error_detected = 0.
+2. Select at least one input data value and individually introduce an error at each of the seven
+Hamming positions using the following masks:
+0000001, 0000010, 0000100, 0001000,
+
+0010000, 0100000, 1000000.
+3. Verify that the corresponding syndrome values are:
+001, 010, 011, 100,
+
+101, 110, 111.
+4. Verify that error_detected becomes 1 whenever a single-bit error is introduced.
+The behavioral simulation waveform must show at least:
+data_in,
+
+encoded_codeword,
+
+received_codeword,
+
+syndrome,
+
+error_mask,
+error_detected.
+
+Note: For this assignment, consider only the cases of no error or exactly one erroneous bit. The
+interpretation of the syndrome as an error position is valid under this single-bit-error assumption.
+
+11. Demonstration
+Demonstration is mandatory.
+Each group must demonstrate the working Verilog design and behavioral simulation to a
+Teaching Assistant.
+During the demonstration, students may be asked to explain:
+• why parity bits are placed at Hamming positions 1, 2, and 4;
+• how the three parity groups are formed;
+9
+
+• how p1 , p2 , and p4 are generated;
+• why a correct codeword produces syndrome 000;
+• why the syndrome identifies a single erroneous bit;
+• how the error mask flips a selected codeword bit; and
+• why the complete design is combinational.
+
+12. Submission
+Submit all Verilog design source files and the testbench in a single zipped folder named
+VerilogAssignment4_{Group_Number}.zip.
+The submission must contain:
+• hamming74_encoder;
+• syndrome_generator;
+• hamming74_system; and
+• the testbench for hamming74_system.
+Each source file must contain the group number, names and roll numbers of all group members, assignment number, and date of submission.
+
+10
+
+

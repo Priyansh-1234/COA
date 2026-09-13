@@ -1,0 +1,322 @@
+Indian Institute of Technology Kharagpur
+AUTUMN Semester, 2026–2027
+COMPUTER SCIENCE AND ENGINEERING
+Computer Organization and Architecture Laboratory
+Verilog Assignment 6
+August 2026
+
+Instructions: This is a group assignment. Each group must implement the complete Verilog
+design, write a suitable testbench, program the FPGA board, and demonstrate the working design
+on the board to a Teaching Assistant for evaluation. The behavioral simulation must also be
+demonstrated to the Teaching Assistant.
+
+Question 1: 4-bit Sequential Booth Multiplier with Visible Iterations
+1. Objective
+Design and implement a 4-bit signed sequential multiplier using Booth’s Multiplication
+Algorithm.
+Both operands are 4-bit signed two’s-complement numbers, and the final product is an 8-bit
+signed two’s-complement number.
+The multiplication must be carried out iteratively. One Booth iteration must be performed
+on every rising edge of a slow clock generated from the FPGA board clock. The slow-clock
+technique demonstrated in the laboratory may be used so that the progress of the multiplication
+can be observed on the board LEDs.
+A purely combinational implementation using the Verilog multiplication operator is not permitted.
+
+2. Top-Level Interface
+Create a top-level module named
+booth_multiplier_4bit
+with the following interface:
+Signal
+clk
+reset
+start
+multiplicand
+multiplier
+display_sel
+led
+
+Width
+1 bit
+1 bit
+1 bit
+4 bits
+4 bits
+1 bit
+16 bits
+
+Description
+FPGA board clock
+Active-high reset
+Starts a new multiplication
+Signed two’s-complement multiplicand
+Signed two’s-complement multiplier
+Selects internal-state or final-result display
+Output connected to the board LEDs
+1
+
+A suggested board mapping is:
+• multiplicand[3:0]: four slide switches;
+• multiplier[3:0]: four slide switches;
+• display_sel: one slide switch;
+• reset: one pushbutton;
+• start: one pushbutton; and
+• led[15:0]: the user LEDs.
+
+3. Booth Registers
+The sequential Booth multiplier must maintain the following internal registers:
+Register
+A
+
+Width
+5 bits
+
+M
+Q
+Q−1
+count
+
+5 bits
+4 bits
+1 bit
+3 bits
+
+Purpose
+Accumulator used during addition/subtraction
+Sign-extended multiplicand
+Multiplier register
+Previous least-significant bit of Q
+Number of Booth iterations completed
+
+The 4-bit multiplicand must be sign-extended before being stored in M .
+The accumulator A and multiplicand register M are specified as 5-bit signed quantities so that
+the complete 4-bit signed input range, including −8, can be handled safely during intermediate
+addition/subtraction.
+
+4. Initialization
+When reset is asserted, the circuit must return to its initial state.
+When start is asserted after reset, the current operand values must be captured and the
+Booth registers initialized as
+A ← 0,
+M ← sign-extended multiplicand,
+Q ← multiplier,
+Q−1 ← 0,
+and
+count ← 0.
+The multiplication must then proceed for exactly four Booth iterations.
+
+2
+
+5. Booth Decision
+At the beginning of every iteration, examine the two-bit value
+{Q0 , Q−1 },
+where Q0 is the least-significant bit of Q.
+The required operation is:
+{Q0 , Q−1 }
+00
+01
+10
+11
+
+Operation
+No addition or subtraction
+A←A+M
+A←A−M
+No addition or subtraction
+
+After this operation, an arithmetic right shift must be applied to the combined Booth register
+{A, Q, Q−1 }.
+The sign bit of A must be preserved during the arithmetic right shift.
+Finally,
+count ← count + 1.
+
+6. Booth’s Algorithm Flowchart
+The following flowchart summarizes the Booth iteration used in this assignment.
+
+Figure 1: Booth’s Multiplication Algorithm
+For this assignment,
+3
+
+n = 4,
+so the loop is executed exactly four times.
+
+7. Slow Clock and Visible Execution
+The FPGA board clock is too fast for the individual Booth iterations to be observed directly.
+Use the slow-clock generation technique demonstrated in the laboratory. A counter may be
+incremented using the board clock, and a suitable higher-order counter bit may be used as
+slow_clk.
+For example,
+Board Clock −→ Clock-Divider Counter −→ slow_clk
+may be used.
+One complete Booth iteration must occur on each rising edge of slow_clk.
+The selected clock division must be slow enough for the four successive iterations to be visibly
+distinguished during the FPGA-board demonstration.
+Students may temporarily connect the slow-clock signal to an LED to verify visible LED
+blinking before integrating the Booth multiplier.
+
+8. Formation of the Final Product
+After four iterations, the final signed 8-bit product must be taken from
+product[7:0] = {A[3 : 0], Q[3 : 0]}
+where A[4] is the sign-extension bit of the internal accumulator.
+Once the fourth iteration is complete:
+• a done condition must be asserted internally;
+• the product must remain stable; and
+• no further Booth iterations must be performed until the circuit is reset and started again.
+
+9. LED Display Requirement
+The LEDs must allow the TA to observe both the progress of the Booth algorithm and the final
+product.
+Use display_sel as follows.
+Internal-State Display: display_sel = 0
+A suggested mapping is:
+LEDs
+LED[4:0]
+LED[8:5]
+LED[9]
+LED[12:10]
+LED[13]
+LED[15:14]
+
+Displayed Signal
+A[4 : 0]
+Q[3 : 0]
+Q−1
+count
+Done indication
+0
+
+With this display, the internal state should visibly change once per slow-clock edge.
+4
+
+Final-Result Display: display_sel = 1
+Use:
+LEDs
+LED[7:0]
+LED[8]
+LED[15:9]
+
+Displayed Signal
+Final signed 8-bit product
+Done indication
+0
+
+Equivalent LED mappings may be used if clearly documented in the submission and demonstrated to the TA.
+
+10. Worked Example
+Consider
+multiplicand = 0011 = +3
+and
+multiplier = 1110 = −2.
+The expected result is
+3 × (−2) = −6.
+The 8-bit two’s-complement representation of −6 is
+11111010 .
+At initialization,
+A = 00000,
+M = 00011,
+Q = 1110,
+and
+Q−1 = 0.
+The circuit must then execute four Booth iterations. During each iteration, students should
+be able to observe:
+1. the current pair {Q0 , Q−1 };
+2. whether A + M , A − M , or no arithmetic operation is selected;
+3. the arithmetic right shift of {A, Q, Q−1 }; and
+4. the increment of the iteration count.
+After the fourth iteration,
+product = 11111010
+and the done indication must be asserted.
+5
+
+11. Required Test Cases
+At minimum, verify the following signed input combinations:
+Multiplicand
+3
+3
+−3
+−3
+7
+−8
+7
+−8
+
+Multiplier
+2
+−2
+2
+−2
+3
+1
+−8
+−8
+
+Expected Product
+6
+−6
+−6
+6
+21
+−8
+−56
+64
+
+Additional test cases may be used during evaluation.
+
+12. Testbench Requirement
+Write a behavioral testbench for the multiplier.
+The testbench must verify:
+• reset and initialization;
+• correct loading of signed operands;
+• correct Booth decision for 01, 10, 00, and 11;
+• exactly four iterations;
+• arithmetic right shifting;
+• correct positive and negative products; and
+• stable output after completion.
+The waveform should show at least
+clk, reset, start, multiplicand, multiplier,
+and the internal signals
+A,
+
+Q,
+
+Q−1 ,
+
+count
+
+together with the final product/done indication.
+A much smaller clock-divider value may be used in the testbench to avoid an unnecessarily
+long simulation.
+
+13. Design Restrictions
+The following requirements must be satisfied:
+1. The Verilog multiplication operator * must not be used to compute the product.
+2. The design must be sequential and iterative. The complete multiplication must not be
+performed in a single clock cycle.
+3. Exactly one Booth iteration must be performed per slow-clock edge.
+6
+
+4. Sequential registers must be updated using non-blocking assignments.
+5. The shift of {A, Q, Q−1 } must be an arithmetic right shift, preserving the sign of A.
+6. The final product must remain unchanged after completion until the design is reset for
+another multiplication.
+
+14. Mandatory FPGA-Board Demonstration
+Demonstration on the FPGA board is mandatory.
+Each group must demonstrate the complete Booth multiplier to a Teaching Assistant.
+The demonstration must include:
+1. Setting signed multiplicand and multiplier values using the board switches.
+2. Resetting and starting the multiplier.
+3. Showing the internal Booth state changing on the LEDs for each slow-clock iteration.
+4. Showing that the iteration count progresses through the four Booth steps.
+5. Switching to the final-result display and showing the correct signed 8-bit product.
+6. Demonstrating at least one positive-result case and one negative-result case.
+The TA may request different operand values during the live demonstration.
+
+15. Submission
+Submit the Verilog source file(s), testbench, and XDC constraint file in a single zipped folder
+named
+VerilogAssignment5_{Group_Number}.zip.
+Each source file must contain the group number, names and roll numbers of all group members, assignment number, and date of submission.
+
+7
+
+

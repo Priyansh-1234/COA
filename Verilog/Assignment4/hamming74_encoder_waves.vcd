@@ -1,0 +1,256 @@
+$date
+	Mon Aug 24 05:41:01 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1ps
+$end
+$scope module hamming74_tb $end
+$var wire 3 ! syndrome [2:0] $end
+$var wire 7 " received_codeword [6:0] $end
+$var wire 1 # error_detected $end
+$var wire 7 $ encoded_codeword [6:0] $end
+$var reg 4 % data_in [3:0] $end
+$var reg 7 & error_mask [6:0] $end
+$scope module uut $end
+$var wire 4 ' data_in [3:0] $end
+$var wire 7 ( error_mask [6:0] $end
+$var wire 7 ) received_codeword [6:0] $end
+$var wire 3 * syndrome [2:0] $end
+$var wire 1 # error_detected $end
+$var wire 7 + encoded_codeword [6:0] $end
+$scope module encoder $end
+$var wire 4 , data [3:0] $end
+$var wire 1 - p1 $end
+$var wire 1 . p2 $end
+$var wire 1 / p4 $end
+$var wire 7 0 codeword [6:0] $end
+$upscope $end
+$scope module generator $end
+$var wire 1 # error_detected $end
+$var wire 7 1 received [6:0] $end
+$var wire 1 2 s1 $end
+$var wire 1 3 s2 $end
+$var wire 1 4 s4 $end
+$var wire 3 5 syndrome [2:0] $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+$end
+#0
+$dumpvars
+b0 5
+04
+03
+02
+b0 1
+b0 0
+0/
+0.
+0-
+b0 ,
+b0 +
+b0 *
+b0 )
+b0 (
+b0 '
+b0 &
+b0 %
+b0 $
+0#
+b0 "
+b0 !
+$end
+#10000
+0#
+03
+b0 !
+b0 *
+b0 5
+04
+1.
+1/
+b101010 "
+b101010 )
+b101010 1
+b101010 $
+b101010 +
+b101010 0
+b100 %
+b100 '
+b100 ,
+#20000
+0#
+02
+b0 !
+b0 *
+b0 5
+03
+1-
+0.
+b101101 "
+b101101 )
+b101101 1
+b101101 $
+b101101 +
+b101101 0
+b101 %
+b101 '
+b101 ,
+#30000
+0#
+02
+03
+b0 !
+b0 *
+b0 5
+04
+0-
+1.
+0/
+b1010010 "
+b1010010 )
+b1010010 1
+b1010010 $
+b1010010 +
+b1010010 0
+b1010 %
+b1010 '
+b1010 ,
+#40000
+1#
+12
+03
+b1 !
+b1 *
+b1 5
+04
+b1100111 "
+b1100111 )
+b1100111 1
+b1100110 $
+b1100110 +
+b1100110 0
+b1 &
+b1 (
+b1101 %
+b1101 '
+b1101 ,
+#50000
+02
+13
+b10 !
+b10 *
+b10 5
+04
+0.
+1/
+b1001110 "
+b1001110 )
+b1001110 1
+b1001100 $
+b1001100 +
+b1001100 0
+b10 &
+b10 (
+b1001 %
+b1001 '
+b1001 ,
+#60000
+12
+1#
+b11 !
+b11 *
+b11 5
+13
+1-
+1.
+b1001111 "
+b1001111 )
+b1001111 1
+b1001011 $
+b1001011 +
+b1001011 0
+b100 &
+b100 (
+b1000 %
+b1000 '
+b1000 ,
+#70000
+02
+03
+b100 !
+b100 *
+b100 5
+14
+b1110111 "
+b1110111 )
+b1110111 1
+b1111111 $
+b1111111 +
+b1111111 0
+b1000 &
+b1000 (
+b1111 %
+b1111 '
+b1111 ,
+#80000
+12
+03
+b101 !
+b101 *
+b101 5
+14
+1-
+1.
+0/
+b100011 "
+b100011 )
+b100011 1
+b110011 $
+b110011 +
+b110011 0
+b10000 &
+b10000 (
+b110 %
+b110 '
+b110 ,
+#90000
+13
+1#
+14
+b110 !
+b110 *
+b110 5
+02
+0.
+1/
+b111001 "
+b111001 )
+b111001 1
+b11001 $
+b11001 +
+b11001 0
+b100000 &
+b100000 (
+b10 %
+b10 '
+b10 ,
+#100000
+12
+13
+b111 !
+b111 *
+b111 5
+14
+b1011001 "
+b1011001 )
+b1011001 1
+b1000000 &
+b1000000 (
+#110000

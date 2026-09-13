@@ -1,0 +1,151 @@
+Indian Institute of Technology Kharagpur
+AUTUMN Semester, 2026–2027
+COMPUTER SCIENCE AND ENGINEERING
+Computer Organization and Architecture Laboratory
+Verilog Assignment 2
+August 2026
+
+Instructions: This is a group assignment intended for practice. Each group must implement the
+Verilog design, write a suitable testbench, and demonstrate the working design and its behavioral
+simulation to a Teaching Assistant for evaluation.
+
+Question 1: Binary–Gray Code Converter
+Design and simulate a combinational circuit that converts a 4-bit binary number into its equivalent Gray code and converts the generated Gray code back into binary.
+The complete design must contain the following Verilog modules.
+
+1. Binary-to-Gray Converter
+Create a module named
+binary_to_gray
+having the following interface:
+Signal
+B
+G
+
+Width
+4 bits
+4 bits
+
+Direction
+Input
+Output
+
+The module must convert the input
+B = B3 B2 B1 B0
+into the corresponding Gray-code output
+G = G3 G2 G1 G0 .
+The conversion is defined by
+G3 = B3 ,
+G2 = B3 ⊕ B2 ,
+G1 = B2 ⊕ B1 ,
+G0 = B1 ⊕ B0 .
+1
+
+2. Gray-to-Binary Converter
+Create a second module named
+gray_to_binary
+having the following interface:
+Signal
+G
+B
+
+Width
+4 bits
+4 bits
+
+Direction
+Input
+Output
+
+The module must convert a 4-bit Gray-code input back into its corresponding binary value.
+The conversion is defined by
+B3 = G3 ,
+B2 = B3 ⊕ G2 ,
+B1 = B2 ⊕ G1 ,
+B0 = B1 ⊕ G0 .
+
+3. Top-Level Converter Module
+Create a top-level module named
+code_converter_top
+with the following interface:
+Signal
+binary_in
+gray_out
+binary_recovered
+
+Width
+4 bits
+4 bits
+4 bits
+
+Direction
+Input
+Output
+Output
+
+The top-level module must instantiate:
+• one binary_to_gray module; and
+• one gray_to_binary module.
+The output of the Binary-to-Gray converter must be connected directly to the input of the
+Gray-to-Binary converter.
+The required module connection is:
+binary_in[3:0]
+↓
+binary_to_gray
+↓
+gray_out[3:0]
+↓
+gray_to_binary
+↓
+binary_recovered[3:0]
+For every possible 4-bit input, the recovered binary output must satisfy
+binary_recovered = binary_in
+2
+
+4. Example
+For the binary input
+binary_in = 1011,
+the Binary-to-Gray converter should generate
+gray_out = 1110.
+Passing this Gray-code value through the Gray-to-Binary converter should produce
+binary_recovered = 1011.
+
+5. Verilog Design Requirement
+The design must follow the modular hierarchy specified above.
+Students may use suitable combinational Verilog constructs such as:
+• gate primitives;
+• continuous assignment using assign; or
+• combinational always @(*) blocks.
+The design must be purely combinational. No clock, flip-flop, latch, or other sequential logic
+is required.
+
+6. Testbench and Simulation
+Write a testbench for the top-level code_converter_top module.
+The testbench must test all 16 possible values of the 4-bit binary input:
+0000 through 1111.
+For every test case, verify that
+binary_recovered = binary_in.
+The behavioral simulation waveform must show at least:
+binary_in,
+
+gray_out,
+
+binary_recovered.
+
+Demonstration is mandatory. Each group must demonstrate the working design and behavioral simulation to a Teaching Assistant. Students may be asked to explain the conversion logic
+and the connections between the three modules.
+
+7. Submission
+Submit the Verilog design source files and testbench in a single zipped folder named
+VerilogAssignment2_{Group_Number}.zip.
+The submission must contain:
+• binary_to_gray;
+3
+
+• gray_to_binary;
+• code_converter_top; and
+• the testbench for code_converter_top.
+Each source file must contain the group number, names and roll numbers of all group members, assignment number, and date of submission.
+
+4
+
+
