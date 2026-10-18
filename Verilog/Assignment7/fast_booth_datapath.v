@@ -50,7 +50,7 @@ module fast_booth_datapath (
     end
   endgenerate
 
-  wire [15:0][63:0] partial_products;
+  wire [63:0] partial_products[0:15];
   generate
     for (index = 0; index < 16; index = index + 1) begin : gen_partial_products
       partial_product_generator pp_generator (

@@ -18,9 +18,9 @@ module fast_booth_controlpath (
     output reg  load_inputs,
     output reg  load_product
 );
-  localparam logic [1:0] IDLE    = 2'b00;
-  localparam logic [1:0] COMPUTE = 2'b01;
-  localparam logic [1:0] DONE    = 2'b10;
+  localparam reg [1:0] IDLE    = 2'b00;
+  localparam reg [1:0] COMPUTE = 2'b01;
+  localparam reg [1:0] DONE    = 2'b10;
 
   reg [1:0] state;
   reg [1:0] next_state;
@@ -33,7 +33,7 @@ module fast_booth_controlpath (
     end
   end
 
-  always @(*) begin
+  always @(state or start) begin
     load_inputs  = 0;
     load_product = 0;
     busy         = 0;

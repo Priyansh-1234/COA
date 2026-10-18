@@ -33,6 +33,8 @@ module partial_product_generator (
 
       if (negate) begin
         temp = ~temp;
+      end else begin
+        temp = temp;
       end
 
       partial_product = temp << (2 * index);
