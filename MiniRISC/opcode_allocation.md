@@ -6,23 +6,21 @@ NOP/HALT: 0x11
 # R type: 
 6 bits remaining opcode; 7 bits funct
 * ADD, SUB, AND, OR, XOR, NOR, NOT, SLL, SRL, SRA, SLLV, SRLV, SRAV, CMP, 
-* MUL,
+* MUL, MAC, MULV, MACV,
 * CMOVZ, CMOVN, CMOVG, CMOVL, 
 * JR, 
 * ADDV, SUBV, ANDV, ORV, XORV, NORV, SPLAT,
-* REDS, REDA, REDO, REDX, REDN,
-
-* MAC, MULV, MACV *NOT ALLOCATED CURRENTLY*
+* REDS, REDA, REDO, REDX, REDN
 
 opcode: 8 bits
 opcode[7:6] = 0b00
-opcode[5:3] = src of write back MUX:
+opcode[5:3] = src of write back MUX / functional unit:
             * 0b000 => Vector instruction
             * 0b001 => Conditional move type instruction
             * 0b010 => ALU type instruction
             * 0b011 => Data memory instruction
             * 0b100 => PC type instruction
-            * 0b101 => MUL instruction
+            * 0b101 => Multiplier family (MUL / MAC / MULV / MACV)
             * 0b110 => currently unallocated
             * 0b111 => currently unallocated
 
@@ -94,8 +92,17 @@ funct[5:4]  = br_type
 funct[3:2]  = pc_src
 * JR        : 0b00 100 000 (rs, rt, rd) 0 00 10 00
 
-## MUL instruction
-* MUL       : 0b00 101 000 (rs, rt, rd) 0000000
+## Multiplier family instructions (MUL, MAC, MULV, MACV)
+opcode[7:6] = 0b00 (R-type)
+opcode[5:3] = 0b101 (MUL unit)
+opcode[2]   = vector_bar_scalar (0: Scalar, 1: Vector)
+opcode[1]   = 0 (reserved)
+opcode[0]   = mac_bar_mul (0: MUL, 1: MAC)
+
+* MUL       : 0b00 101 0 0 0 (rs, rt, rd) 0000000 (0x28)
+* MAC       : 0b00 101 0 0 1 (rs, rt, rd) 0000000 (0x29)
+* MULV      : 0b00 101 1 0 0 (vs, vt, vd) 0000000 (0x2C)
+* MACV      : 0b00 101 1 0 1 (vs, vt, vd) 0000000 (0x2D)
 
 # I type:
 6 bits opcode remaining

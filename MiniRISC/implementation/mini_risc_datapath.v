@@ -12,6 +12,7 @@ module mini_risc_datapath (
     input  wire       macv,
     input  wire       rf128_en,
     input  wire [1:0] alu32_src,
+    input  wire       alu128_src,
     input  wire [2:0] incr_value,
     input  wire       add_bar_sub,
     input  wire       shift_src,
@@ -24,7 +25,11 @@ module mini_risc_datapath (
     input  wire       en,
     input  wire       we,
     input  wire [2:0] reg32_src,
-    input  wire       reg128_src,
+    input  wire [1:0] reg128_src,
+    input  wire       mul_start,
+    input  wire       mulv_start,
+    output wire       mul_done,
+    output wire       mulv_done,
     output wire       zero_flag,
     output wire       sign_flag,
     output wire [7:0] opcode,
@@ -52,12 +57,18 @@ module mini_risc_datapath (
 
   wire [ 31:0] imm_se;
 
+  wire [ 63:0] mul_product;
+  wire         mul_busy;
   wire [ 31:0] mul_result;
   wire [ 31:0] increment_value;
+
+  wire [127:0] mul128_result;
+  wire         mulv_busy;
 
   reg  [ 31:0] alu32_input2;
   wire [ 31:0] alu32_result;
 
+  wire [127:0] alu128_input2;
   wire [127:0] alu128_result;
   wire [ 31:0] splat_result;
 
@@ -146,7 +157,29 @@ module mini_risc_datapath (
       .result(imm_se)
   );
 
-  assign mul_result = 32'd0;
+  fast_booth_multiplier multiplier_unit (
+      .clk         (clk),
+      .rst         (rst),
+      .start       (mul_start),
+      .multiplicand(rs),
+      .multiplier  (rt),
+      .product     (mul_product),
+      .busy        (mul_busy),
+      .done        (mul_done)
+  );
+
+  assign mul_result = mul_product[31:0];
+
+  vector_multiplier vector_multiplier_unit (
+      .clk         (clk),
+      .rst         (rst),
+      .start       (mulv_start),
+      .multiplicand(vs),
+      .multiplier  (vt),
+      .product     (mul128_result),
+      .busy        (mulv_busy),
+      .done        (mulv_done)
+  );
 
   assign increment_value = {29'd0, incr_value};
 
@@ -176,9 +209,11 @@ module mini_risc_datapath (
       .result     (alu32_result)
   );
 
+  assign alu128_input2 = (alu128_src == 1'b0) ? vt : mul128_result;
+
   simd_alu sa (
       .input1      (vs),
-      .input2      (vt),
+      .input2      (alu128_input2),
       .rs          (rs),
       .imm         (imm_se),
       .splat_src   (splat_src),
@@ -215,8 +250,9 @@ module mini_risc_datapath (
     endcase
 
     case (reg128_src)
-      1'b0:    write_data_v = alu128_result;
-      1'b1:    write_data_v = data128;
+      2'b00:   write_data_v = alu128_result;
+      2'b01:   write_data_v = data128;
+      2'b10:   write_data_v = mul128_result;
       default: write_data_v = 128'd0;
     endcase
   end

@@ -22,7 +22,7 @@ module register_file_4x128 (
   always @(posedge clk or posedge rst) begin
     if (rst) begin
       for (i = 0; i < 4; i = i + 1) begin
-        regs[i] <= 127'd0;
+        regs[i] <= 128'd0;
       end
     end else begin
       if (write_en) begin

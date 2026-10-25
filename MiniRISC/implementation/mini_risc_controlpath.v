@@ -5,6 +5,8 @@ module mini_risc_controlpath (
     input  wire [6:0] funct,
     input  wire       zero_flag,
     input  wire       sign_flag,
+    input  wire       mul_done,
+    input  wire       mulv_done,
     output reg        branch,
     output reg  [1:0] br_type,
     output reg  [1:0] pc_src,
@@ -16,6 +18,7 @@ module mini_risc_controlpath (
     output reg        macv,
     output reg        rf128_en,
     output reg  [1:0] alu32_src,
+    output reg        alu128_src,
     output reg  [2:0] incr_value,
     output reg        add_bar_sub,
     output reg        shift_src,
@@ -28,7 +31,9 @@ module mini_risc_controlpath (
     output reg        en,
     output reg        we,
     output reg  [2:0] reg32_src,
-    output reg        reg128_src
+    output reg  [1:0] reg128_src,
+    output reg        mul_start,
+    output reg        mulv_start
 );
 
   localparam S_FETCH     = 4'd0;
@@ -46,14 +51,19 @@ module mini_risc_controlpath (
   localparam S_DECJ_DEC  = 4'd12;
   localparam S_DECJ_BR   = 4'd13;
   localparam S_HALT      = 4'd14;
+  localparam S_EX_MAC    = 4'd15;
 
   reg [3:0] current_state, next_state;
 
-  wire [1:0] inst_type = opcode[7:6];
-  wire [2:0] r_wb_src = opcode[5:3];
-  wire [1:0] i_wb_src = opcode[5:4];
-  wire       is_load = opcode[2];
-  wire       is_auto_inc = opcode[3];
+  wire [1:0] inst_type    = opcode[7:6];
+  wire [2:0] r_wb_src     = opcode[5:3];
+  wire [1:0] i_wb_src     = opcode[5:4];
+  wire       is_load      = opcode[2];
+  wire       is_auto_inc  = opcode[3];
+  wire       is_mul_group = (inst_type == 2'b00) && (r_wb_src == 3'b101);
+  wire       is_vector    = is_mul_group && (opcode[2] == 1'b1); // Vector multiplier (MULV or MACV)
+  wire       is_mac       = is_mul_group && (opcode[0] == 1'b1); // MAC type (MAC or MACV)
+  wire       mult_done_active = is_vector ? mulv_done : mul_done;
 
   reg        cmov_cond;
   always @(*) begin
@@ -139,6 +149,18 @@ module mini_risc_controlpath (
       end
 
       S_EX_MUL: begin
+        if (!mult_done_active) begin
+          next_state = S_EX_MUL;
+        end else begin
+          if (is_mac) begin
+            next_state = S_EX_MAC;
+          end else begin
+            next_state = S_FETCH;
+          end
+        end
+      end
+
+      S_EX_MAC: begin
         next_state = S_FETCH;
       end
 
@@ -212,6 +234,7 @@ module mini_risc_controlpath (
     macv         = 1'b0;
     rf128_en     = 1'b0;
     alu32_src    = 2'b00;
+    alu128_src   = 1'b0;
     incr_value   = 3'b000;
     add_bar_sub  = 1'b0;
     shift_src    = 1'b0;
@@ -224,7 +247,9 @@ module mini_risc_controlpath (
     en           = 1'b0;
     we           = 1'b0;
     reg32_src    = 3'b000;
-    reg128_src   = 1'b0;
+    reg128_src   = 2'b00;
+    mul_start    = 1'b0;
+    mulv_start   = 1'b0;
 
     case (current_state)
       S_FETCH: begin
@@ -238,6 +263,13 @@ module mini_risc_controlpath (
           pc_en  = 1'b1;
           pc_src = 2'b00;
           branch = 1'b0;
+        end
+        if (is_mul_group) begin
+          if (is_vector) begin
+            mulv_start = 1'b1;
+          end else begin
+            mul_start  = 1'b1;
+          end
         end
       end
 
@@ -282,7 +314,8 @@ module mini_risc_controlpath (
           splat_src  = opcode[2];
           func_class = opcode[1:0];
           reduction  = 1'b0;
-          reg128_src = 1'b0;
+          reg128_src = 2'b00;
+          reg32_dst  = 2'b01;
           rf128_en   = 1'b1;
         end else begin
           reduction = opcode[2];
@@ -291,7 +324,7 @@ module mini_risc_controlpath (
             add_bar_sub = funct[6];
             logic_func  = {1'b0, funct[5:4]};
             splat_src   = funct[3];
-            reg128_src  = 1'b0;
+            reg128_src  = 2'b00;
             rf128_en    = 1'b1;
           end else begin
             func_class  = opcode[1:0];
@@ -305,12 +338,54 @@ module mini_risc_controlpath (
       end
 
       S_EX_MUL: begin
-        reg32_src = 3'b101;
-        reg32_dst = 2'b00;
-        rf32_en   = 1'b1;
-        pc_en     = 1'b1;
-        pc_src    = 2'b00;
-        branch    = 1'b0;
+        if (mult_done_active) begin
+          if (!is_mac) begin
+            if (is_vector) begin
+              reg128_src = 2'b10;
+              rf128_en   = 1'b1;
+            end else begin
+              reg32_src  = 3'b101;
+              reg32_dst  = 2'b00;
+              rf32_en    = 1'b1;
+            end
+            pc_en  = 1'b1;
+            pc_src = 2'b00;
+            branch = 1'b0;
+          end else begin
+            rf32_en  = 1'b0;
+            rf128_en = 1'b0;
+            pc_en    = 1'b0;
+            branch   = 1'b0;
+          end
+        end else begin
+          rf32_en  = 1'b0;
+          rf128_en = 1'b0;
+          pc_en    = 1'b0;
+          branch   = 1'b0;
+        end
+      end
+
+      S_EX_MAC: begin
+        if (is_vector) begin
+          macv        = 1'b1;
+          alu128_src  = 1'b1;
+          func_class  = 2'b10;
+          add_bar_sub = 1'b0;
+          reduction   = 1'b0;
+          reg128_src  = 2'b00;
+          rf128_en    = 1'b1;
+        end else begin
+          mac         = 1'b1;
+          alu32_src   = 2'b10;
+          func_class  = 2'b10;
+          add_bar_sub = 1'b0;
+          reg32_src   = 3'b010;
+          reg32_dst   = 2'b00;
+          rf32_en     = 1'b1;
+        end
+        pc_en  = 1'b1;
+        pc_src = 2'b00;
+        branch = 1'b0;
       end
 
       S_BRANCH: begin
@@ -364,7 +439,7 @@ module mini_risc_controlpath (
         reg32_dst   = 2'b01;
 
         if (opcode[1:0] == 2'b10) begin
-          reg128_src = 1'b1;
+          reg128_src = 2'b01;
           rf128_en   = 1'b1;
         end else begin
           reg32_src = 3'b011;

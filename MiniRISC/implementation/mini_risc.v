@@ -18,6 +18,7 @@ module mini_risc (
   wire       rf128_en;
 
   wire [1:0] alu32_src;
+  wire       alu128_src;
   wire [2:0] incr_value;
 
   wire       add_bar_sub;
@@ -34,11 +35,16 @@ module mini_risc (
   wire       we;
 
   wire [2:0] reg32_src;
-  wire       reg128_src;
+  wire [1:0] reg128_src;
   wire       zero_flag;
   wire       sign_flag;
   wire [7:0] opcode;
   wire [6:0] funct;
+
+  wire       mul_start;
+  wire       mul_done;
+  wire       mulv_start;
+  wire       mulv_done;
 
   mini_risc_datapath datapath (
       .clk         (clk),
@@ -54,6 +60,7 @@ module mini_risc (
       .macv        (macv),
       .rf128_en    (rf128_en),
       .alu32_src   (alu32_src),
+      .alu128_src  (alu128_src),
       .incr_value  (incr_value),
       .add_bar_sub (add_bar_sub),
       .shift_src   (shift_src),
@@ -67,6 +74,10 @@ module mini_risc (
       .we          (we),
       .reg32_src   (reg32_src),
       .reg128_src  (reg128_src),
+      .mul_start   (mul_start),
+      .mulv_start  (mulv_start),
+      .mul_done    (mul_done),
+      .mulv_done   (mulv_done),
       .zero_flag   (zero_flag),
       .sign_flag   (sign_flag),
       .opcode      (opcode),
@@ -80,6 +91,8 @@ module mini_risc (
       .funct       (funct),
       .zero_flag   (zero_flag),
       .sign_flag   (sign_flag),
+      .mul_done    (mul_done),
+      .mulv_done   (mulv_done),
       .branch      (branch),
       .br_type     (br_type),
       .pc_src      (pc_src),
@@ -91,6 +104,7 @@ module mini_risc (
       .macv        (macv),
       .rf128_en    (rf128_en),
       .alu32_src   (alu32_src),
+      .alu128_src  (alu128_src),
       .incr_value  (incr_value),
       .add_bar_sub (add_bar_sub),
       .shift_src   (shift_src),
@@ -103,6 +117,8 @@ module mini_risc (
       .en          (en),
       .we          (we),
       .reg32_src   (reg32_src),
-      .reg128_src  (reg128_src)
+      .reg128_src  (reg128_src),
+      .mul_start   (mul_start),
+      .mulv_start  (mulv_start)
   );
 endmodule
